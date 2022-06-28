@@ -22,19 +22,14 @@ def is_image_file(filename):
 
 def make_dataset(dir, max_dataset_size=float("inf")):
     images = []
-    assert os.path.isdir(dir), '%s is not a valid directory, follow the intructions in README.md on how to add the dataset' % dir
+    assert os.path.isdir(dir), '%s is not a valid directory' % dir
 
-    styles = []
-    chars = []
     for root, _, fnames in sorted(os.walk(dir)):
-        styles.append(root.split("\\")[-1])
-        if len(fnames) > len(chars):
-            chars = fnames
         for fname in fnames:
             if is_image_file(fname):
                 path = os.path.join(root, fname)
                 images.append(path)
-    return images[:min(max_dataset_size, len(images))], styles, chars
+    return images[:min(max_dataset_size, len(images))]
 
 
 def default_loader(path):

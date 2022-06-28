@@ -192,15 +192,10 @@ class Visualizer():
         if not hasattr(self, 'plot_data'):
             self.plot_data = {'X': [], 'Y': [], 'legend': list(losses.keys())}
         self.plot_data['X'].append(epoch + counter_ratio)
-        if len(losses.keys()) == 1:
-            self.plot_data['Y'].append([losses[k] for k in self.plot_data['legend']][0])
-            X = np.array(self.plot_data['X'])
-        else:
-            self.plot_data['Y'].append([losses[k] for k in self.plot_data['legend']])
-            X = np.stack([np.array(self.plot_data['X'])] * len(self.plot_data['legend']), 1)
+        self.plot_data['Y'].append([losses[k] for k in self.plot_data['legend']])
         try:
             self.vis.line(
-                X=X,
+                X=np.stack([np.array(self.plot_data['X'])] * len(self.plot_data['legend']), 1),
                 Y=np.array(self.plot_data['Y']),
                 opts={
                     'title': self.name + ' loss over time',

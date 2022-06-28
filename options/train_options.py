@@ -36,7 +36,6 @@ class TrainOptions(BaseOptions):
         parser.add_argument('--lr_policy', type=str, default='linear', help='learning rate policy. [linear | step | plateau | cosine]')
         parser.add_argument('--lr_decay_iters', type=int, default=50, help='multiply by a gamma every lr_decay_iters iterations')
         # Font-GAN specific parameters
-        output_freq = 1000
-        parser.set_defaults(display_freq=output_freq, update_html_freq=output_freq, print_freq=output_freq, save_latest_freq=5000000, n_epochs=10, n_epochs_decay=10, display_ncols=10, save_epoch_freq=1)
+        parser.set_defaults(display_freq=10, update_html_freq=10, print_freq=10, save_latest_freq=5000000, n_epochs=10, n_epochs_decay=10, display_ncols=10, save_epoch_freq=1)
         self.isTrain = True
         return parser

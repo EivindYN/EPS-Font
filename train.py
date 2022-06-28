@@ -26,6 +26,23 @@ from util.visualizer import Visualizer
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
+    assert opt.stages != "0,1", "Set stages to either 0 or 1"
+    if opt.stages == "0":
+        opt.name += "_offset_prediction"
+    elif opt.stages == "1":
+        opt.stages = "0"
+        name = opt.name
+        opt.name += "_offset_prediction"
+        continue_train = opt.continue_train
+        opt.continue_train = True
+        model_offset = create_model(opt)      # create a model given opt.model and other options
+        model_offset.setup(opt)               # regular setup: load and print networks; create schedulers
+        opt.stages = "1"
+        opt.dis_2 = True
+        opt.name = name
+        opt.name += "_font_generation"
+        opt.continue_train = continue_train
+
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
     dataset_size = len(dataset)    # get the number of images in the dataset.
     print('The number of training images = %d' % dataset_size)
@@ -47,9 +64,12 @@ if __name__ == '__main__':
 
             total_iters += opt.batch_size
             epoch_iter += opt.batch_size
-            model.set_input(data)         # unpack data from dataset and apply preprocessing
+            if opt.stages != "1":
+                model.set_input(data)         # unpack data from dataset and apply preprocessing
+            else:
+                model.set_input(data, model_offset)         # unpack data from dataset and apply preprocessing
             model.optimize_parameters()   # calculate loss functions, get gradients, update network weights
-
+            model.process = epoch/(opt.n_epochs + opt.n_epochs_decay + 1)
             if total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
                 save_result = total_iters % opt.update_html_freq == 0
                 model.compute_visuals()

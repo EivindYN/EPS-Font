@@ -32,7 +32,7 @@ class BaseOptions():
         parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in the first conv layer')
         parser.add_argument('--netD', type=str, default='basic', help='specify discriminator architecture [basic | n_layers | pixel]. The basic model is a 70x70 PatchGAN. n_layers allows you to specify the layers in the discriminator')
         parser.add_argument('--netG', type=str, default='resnet_9blocks', help='specify generator architecture [resnet_9blocks | resnet_6blocks | unet_256 | unet_128]')
-        parser.add_argument('--n_layers_D', type=int, default=2, help='only used if netD==n_layers')
+        parser.add_argument('--n_layers_D', type=int, default=3, help='only used if netD==n_layers')
         parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization [instance | batch | none]')
         parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal | xavier | kaiming | orthogonal]')
         parser.add_argument('--init_gain', type=float, default=0.02, help='scaling factor for normal, xavier and orthogonal.')
@@ -56,6 +56,7 @@ class BaseOptions():
         parser.add_argument('--suffix', default='', type=str, help='customized suffix: opt.name = opt.name + suffix: e.g., {model}_{netG}_size{load_size}')
         # Font-GAN specific parameters TODO: Consider moving to dataset or model
         parser.add_argument('--style_channel', type=int, default=6, help='# of style channels') #default=13
+        parser.add_argument('--stages', type=str, default="0,1", help="which stages to include? 0: offset prediction, 1: font generation")
         parser.set_defaults(model="font_gan", direction="english2chinese", dataset_mode="font",load_size=16, display_winsize=64, batch_size=64)
         self.initialized = True
         return parser

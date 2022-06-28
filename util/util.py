@@ -1,9 +1,12 @@
 """This module contains simple helper functions """
 from __future__ import print_function
+import random
 import torch
 import numpy as np
 from PIL import Image
+import util.image
 import os
+import imgaug.augmenters as iaa
 
 
 def tensor2im(input_image, imtype=np.uint8):
@@ -102,11 +105,23 @@ def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
+def color_to_skel(color_image):
+    #Lazy solution, but blue is ~0 inside the colored part (offsets), ~1 outside the colored part.
+    black_image = [[color[2] > 200 for color in row] for row in color_image] 
+    image = util.image.Image("", black_image, black_image) #3rd input doesnt matter here, empty image would work aswell
+    #image.setup()
+    image.make_pixels()
+    #image.color_to_skel(color_image)
+    image.stroke = 0
+    #for _ in range(2):
+    #    image.average_morph(image.pixels)
+    return image.make_image(image.pixels, False)
 
-def fun_CosSim(Mat_A, Mat_B, norm=1, ):#N by F
-    N_A = Mat_A.size(0)
-    N_B = Mat_B.size(0)
-    
-    D = Mat_A.mm(torch.t(Mat_B))
-    D.fill_diagonal_(-norm)
-    return D
+def image_augment(images_list):
+    rnd_num = random.uniform(-30,30)
+    rotate=iaa.Affine(rotate=(rnd_num, rnd_num), cval=1)
+    for images in images_list:
+        for i in range(len(images)):
+            images[i] =torch.from_numpy(rotate.augment_image(np.array(images[i].permute(1, 2, 0)))).permute(2, 0, 1)
+
+
