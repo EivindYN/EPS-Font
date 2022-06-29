@@ -6,7 +6,8 @@ Tested on Windows, but should work on Linux as well.
 
 If you want to use DTS, go to the branch "DTS".
 
-Setup:
+## Setup
+
 ``` bash
   pip install -r requirements.txt
 ```
