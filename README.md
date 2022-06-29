@@ -41,4 +41,4 @@ Then decrease the batch size.
   python test.py
 ```
 
-Go to the branch "DTS" if you want to use DTS.
+If you want to use DTS, go to the branch "DTS".
