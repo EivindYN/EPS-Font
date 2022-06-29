@@ -26,7 +26,7 @@ Tested on Windows, but should work on Linux as well.
   python -m visdom.server
 ```
 
-- To train P(d_{offset}|c_{sk},s):
+- To train P(d<sub>offset</sub>|c<sub>sk</sub>,s):
 ``` bash
   python train.py --stage 0
 ```
