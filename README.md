@@ -1,13 +1,14 @@
-# EPS-Font
+# EPS-Font DTS
 
 Implementation of "Few-shot Font Style Transfer with Extraction of Partial Style"
+
+Tested on Windows, but should work on Linux as well.
 
 Setup:
 ``` bash
   pip install -r requirements.txt
+  pip install scikit-image
 ```
-
-Tested on Windows, but should work on Linux as well.
 
 ## Usage
 
@@ -15,14 +16,24 @@ Tested on Windows, but should work on Linux as well.
 
 - Unzip it to .\datasets\
 
+- Make DTS dataset (Warning: Takes a lot of time)
+``` bash
+  python DTS_dataset.py
+```
+
 - Start visdom (training visualization):
 ``` bash
   python -m visdom.server
 ```
 
-- To train:
+- To train P(d_{offset}|c_{sk},s):
 ``` bash
-  python train.py
+  python train.py --stage 0
+```
+
+- To train P(y|d,s):
+``` bash
+  python train.py --stage 1
 ```
 
 NB: Defaults are batch_size = 64, gpu = 0, lambda_SC = 0.
