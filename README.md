@@ -34,7 +34,7 @@ If you get an error ending with:
       output: 00000007854CD800
       weight: 0000000785488000
 ```
-Then decrease the batch size
+Then decrease the batch size.
 
 - To test:
 ``` bash
