@@ -9,6 +9,8 @@ Setup:
 
 Tested on Windows, but should work on Linux as well.
 
+If you want to use DTS, go to the branch "DTS".
+
 ## Usage
 
 - Download [dataset](https://github.com/ligoudaner377/font_translator_gan) from Li et al. 
@@ -40,5 +42,3 @@ Then decrease the batch size.
 ``` bash
   python test.py
 ```
-
-If you want to use DTS, go to the branch "DTS".
