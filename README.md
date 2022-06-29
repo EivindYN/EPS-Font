@@ -2,7 +2,7 @@
 
 Implementation of "Few-shot Font Style Transfer with Extraction of Partial Style"
 
-Setup
+Setup:
 ``` bash
   pip install -r requirements.txt
 ```
