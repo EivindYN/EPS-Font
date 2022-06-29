@@ -2,14 +2,14 @@
 
 Implementation of "Few-shot Font Style Transfer with Extraction of Partial Style"
 
+Tested on Windows, but should work on Linux as well.
+
+If you want to use DTS, go to the branch "DTS".
+
 Setup:
 ``` bash
   pip install -r requirements.txt
 ```
-
-Tested on Windows, but should work on Linux as well.
-
-If you want to use DTS, go to the branch "DTS".
 
 ## Usage
 
