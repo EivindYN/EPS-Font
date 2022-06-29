@@ -25,14 +25,14 @@ class FontDataset(BaseDataset):
                                              transforms.Normalize(mean = (0.5), std = (0.5))])
         self.img_size = opt.load_size
 
-        self.stages = opt.stages
+        self.stages = opt.stage
         self.base_parent_path = opt.dataroot.replace("/", os.sep)
         self.style_parent_path = self.base_parent_path
         self.base_content_parent_path = self.base_parent_path
         self.content_parent_path = "." + os.sep + "datasets" + os.sep + "font_offset_color"
-        if opt.stages == "0":
+        if opt.stage == "0":
             self.gt_parent_path = self.content_parent_path
-        elif opt.stages == "1":
+        elif opt.stage == "1":
             self.gt_parent_path = self.base_parent_path
 
     def __getitem__(self, index):

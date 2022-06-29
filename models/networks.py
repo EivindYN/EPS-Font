@@ -4,6 +4,7 @@ from torch.nn import init
 import functools
 from torch.optim import lr_scheduler
 from torch.nn.utils import spectral_norm #FTGAN
+import util.util
 
 
 ###############################################################################
@@ -163,7 +164,7 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
     elif netG=='FTGAN_HAN':
         net = FTGAN_Generator_HAN(ngf=ngf, use_dropout=use_dropout, n_blocks=6)
     elif netG=='FTGAN_MLAN':
-        net = FTGAN_Generator_MLAN(ngf=ngf, use_dropout=use_dropout, n_blocks=6, input_nc=input_nc, output_nc=output_nc)
+        net = FTGAN_Generator_MLAN(ngf=ngf, use_dropout=use_dropout, n_blocks=6)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % netG)
     return init_net(net, init_type, init_gain, gpu_ids)
@@ -206,7 +207,7 @@ def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal'
         net = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer)
     elif netD == 'basic_64':  #FTGAN default PatchGAN classifier Receptive Field = 34 
         if use_spectral_norm:
-            net = NLayerDiscriminatorS(input_nc, ndf, n_layers=2, norm_layer=norm_layer)
+            net = NLayerDiscriminatorS(input_nc, ndf, n_layers=n_layers_D, norm_layer=norm_layer)
         else:
             net = NLayerDiscriminator(input_nc, ndf, n_layers=2, norm_layer=norm_layer)
     elif netD == 'n_layers':  # more options
@@ -657,7 +658,7 @@ class NLayerDiscriminatorS(nn.Module):
             use_bias = norm_layer.func == nn.InstanceNorm2d
         else:
             use_bias = norm_layer == nn.InstanceNorm2d
-        kw = 4
+        kw = 4 
         padw = 1
         sequence = [spectral_norm(nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw)), nn.LeakyReLU(0.2, True)]
         nf_mult = 1
@@ -678,34 +679,93 @@ class NLayerDiscriminatorS(nn.Module):
                     nn.LeakyReLU(0.2, True)
                     ]
         sequence += [spectral_norm(nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw))]
+        # kw 4 -> 3
+        # n_layers 2 -> 6
+        # content_image * 0
+        # style_loss * 0
         self.model = nn.Sequential(*sequence)
 
     def forward(self, input):
         """Standard forward."""
-        return self.model(input)
+        output = self.model(input)
+        #print(output.shape)
+        return output
+
+class FTGAN_Encoder_Atten(nn.Module):
+    def __init__(self, input_nc, ngf=64):
+        super(FTGAN_Encoder_Atten, self).__init__()
+        self.encoder1 = nn.Sequential(nn.ReflectionPad2d(3),
+                 nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0, bias=False),
+                 nn.InstanceNorm2d(ngf),
+                 nn.ReLU(True))
+        self.self_atten = Self_Attn(ngf * (2**4))
+        self.mask = nn.Sequential(nn.Conv2d(ngf * (2**4), 1, kernel_size=1, padding=0), nn.Tanh())
+        self.softmax  = nn.Softmax(dim=1) 
+        encoder2 = []
+        for i in range(4):  # add downsampling layers
+            mult = 2 ** i
+            encoder2 += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1, bias=False),
+                      nn.InstanceNorm2d(ngf * mult * 2),
+                      nn.ReLU(True)
+                      ]
+        self.encoder2 = nn.Sequential(*encoder2)
+        self.ngf = ngf
+        
+    def forward(self, inp):
+        features = self.encoder1(inp)
+        features = self.encoder2(features)
+        B, C, H, W= features.shape
+        h = self.self_atten(features)
+        h = self.mask(h)
+        attention_map = self.softmax(h.view(B, H*W)).view(B, 1, H, W)       # (B, 1, H, W) 
+        features = features*attention_map
+        features = features / torch.sum(attention_map, dim=[2,3]).view(B, 1, 1, 1)
+        features = torch.sum(features, dim=[2, 3]).view(B, self.ngf * (2 ** 4), 1, 1) + torch.randn([B, self.ngf * (2 ** 4), 4, 4], device='cuda')*0.02
+        return features
 
 class FTGAN_Encoder(nn.Module):
     def __init__(self, input_nc, ngf=64):
         super(FTGAN_Encoder, self).__init__()
         model = [nn.ReflectionPad2d(3),
-                 nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0, bias=False),
-                 nn.BatchNorm2d(ngf),
+                 nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0),
+                 nn.BatchNorm2d(int(ngf)),
                  nn.ReLU(True)]
         for i in range(2):  # add downsampling layers
             mult = 2 ** i
-            model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1, bias=False),
-                      nn.BatchNorm2d(ngf * mult * 2),
-                      nn.ReLU(True)
-                      ]
+            model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
+                      nn.BatchNorm2d(int(ngf * mult * 2)),
+                      nn.ReLU(True)]
         self.model = nn.Sequential(*model)
         
     def forward(self, inp):
         return self.model(inp)
-    
+
+class FTGAN_Encoder_Style(nn.Module):
+    def __init__(self, input_nc, ngf=64):
+        super(FTGAN_Encoder_Style, self).__init__()
+        model = [nn.ReflectionPad2d(3),
+                 nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0, bias=False),
+                 nn.BatchNorm2d(ngf),
+                 nn.ReLU(True)]
+        for i in range(4):  # add downsampling layers
+            mult = 2 ** i
+            model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
+                      nn.BatchNorm2d(int(ngf * mult * 2)),
+                      nn.ReLU(True)
+                      ]
+        mult *= 2
+        model += [nn.Conv2d(ngf * mult, ngf * 4, kernel_size=4),
+                    nn.BatchNorm2d(int(ngf * 4)),
+                    nn.ReLU(True)
+                    ]
+        self.model = nn.Sequential(*model)
+        
+    def forward(self, inp):
+        return self.model(inp)
+
 class FTGAN_Decoder(nn.Module):
-    def __init__(self, use_dropout=False, n_blocks=6, ngf=64, output_nc=1):
+    def __init__(self, use_dropout=False, n_blocks=6, ngf=64):
         super(FTGAN_Decoder, self).__init__()
-        #ngf = 96
         model = []
         for i in range(n_blocks):       # add ResNet blocks
             model += [ResnetBlock(ngf*8, padding_type='reflect', norm_layer=nn.BatchNorm2d, use_dropout=use_dropout, use_bias=False)]
@@ -718,10 +778,10 @@ class FTGAN_Decoder(nn.Module):
                       nn.BatchNorm2d(int(ngf * mult / 2)),
                       nn.ReLU(True)]
         model += [nn.ReflectionPad2d(3)]
-        model += [nn.Conv2d(ngf*2, output_nc, kernel_size=7, padding=0)]
+        model += [nn.Conv2d(ngf*2, 1, kernel_size=7, padding=0)]
         model += [nn.Tanh()]
         self.model = nn.Sequential(*model)
-        
+
     def forward(self, inp):
         return self.model(inp)
     
@@ -776,6 +836,7 @@ class FTGAN_Local_Atten(nn.Module):
         h = self.context_vec(h)                                             # (B*H*W, 1)
         attention_map = self.softmax(h.view(B, H*W)).view(B, 1, H, W)       # (B, 1, H, W) 
         style_features = torch.sum(style_features*attention_map, dim=[2, 3])
+        style_features *= (H * W) / torch.sum(attention_map, dim=[2,3])
         return style_features
     
 class FTGAN_Global_Atten(nn.Module):
@@ -832,42 +893,36 @@ class FTGAN_Layer_Atten(nn.Module):
         return style_features
     
 class FTGAN_Generator_MLAN(nn.Module):
-    def __init__(self, ngf=64, use_dropout=False, n_blocks=6, input_nc=1, output_nc=1):
+    def __init__(self, ngf=64, use_dropout=False, n_blocks=6):
         super(FTGAN_Generator_MLAN, self).__init__()
-        self.style_encoder = FTGAN_Encoder(input_nc=input_nc, ngf=ngf)
-        self.content_encoder = FTGAN_Encoder(input_nc=input_nc, ngf=ngf)
-        self.decoder = FTGAN_Decoder(use_dropout=use_dropout, n_blocks=n_blocks, ngf=ngf, output_nc=output_nc)
-        self.local_atten_1 = FTGAN_Local_Atten(ngf=ngf)
-        self.local_atten_2 = FTGAN_Local_Atten(ngf=ngf)
-        self.local_atten_3 = FTGAN_Local_Atten(ngf=ngf)
-        self.layer_atten = FTGAN_Layer_Atten(ngf=ngf)
-        
-        self.downsample_1 = nn.Sequential(nn.Conv2d(ngf * 4, ngf * 4, kernel_size=3, stride=2, padding=1, bias=False),
-                          nn.BatchNorm2d(ngf * 4),
-                          nn.ReLU(True)
-                          )
-        self.downsample_2 = nn.Sequential(nn.Conv2d(ngf * 4, ngf * 4, kernel_size=3, stride=2, padding=1, bias=False),
-                          nn.BatchNorm2d(ngf * 4),
-                          nn.ReLU(True)
-                          )
+        self.style_encoder = FTGAN_Encoder_Style(input_nc=1, ngf=ngf)
+        self.content_encoder = FTGAN_Encoder(input_nc=1, ngf=ngf)
+        self.decoder = FTGAN_Decoder(use_dropout=use_dropout, n_blocks=n_blocks, ngf=ngf)
+        self.normalizer = nn.Sequential(nn.LayerNorm([ngf*2, 1, 1], elementwise_affine = False), nn.ReLU(True)) # 4 == num_layers
+        self.batch_norm = nn.Sequential(nn.Conv2d(ngf * 4, ngf * 4, kernel_size=1), nn.BatchNorm2d(int(ngf * 4)), nn.ReLU(True))
+
     def forward(self, inp):
         content_image, style_images = inp
-        B, K, C, _, _ = style_images.shape
-        content_feature = self.content_encoder(content_image)
-        
-        style_features = self.style_encoder(style_images.view(-1, C, 64, 64)) # Batch, 6, C, 64, 64 -> Batch*6, C, 64, 64
-        style_features_1 = self.local_atten_1(style_features)
-        
-        style_features = self.downsample_1(style_features)
-        style_features_2 = self.local_atten_2(style_features)
-        
-        style_features = self.downsample_2(style_features)
-        style_features_3 = self.local_atten_3(style_features)
-        
-        style_features = self.layer_atten(style_features, style_features_1, style_features_2, style_features_3, B, K)
-        feature = torch.cat([content_feature, style_features], dim=1)
-        outp = self.decoder(feature)
-        return outp    
+        B, K = style_images.shape[0:2]
+        style_images = style_images.view(-1, 1, 64, 64) #B, K, 64, 64 -> B * K, 1, 64, 64
+        if content_image != None:
+            content_feature = self.content_encoder(content_image)
+            style_features = []
+            for i in range(K):
+                style_features.append(self.style_encoder(style_images[i::K]))
+            style_features = torch.mean(torch.stack(style_features), dim=0)
+            style_features = self.batch_norm(style_features)
+            B, C, X, Y = content_feature.shape
+            style_features = style_features + torch.randn([B, C, X, Y], device='cuda')*0.02
+            feature = torch.cat([content_feature, style_features], dim=1)
+            outp = self.decoder(feature)
+            style_features = None
+        else:
+            outp = None
+            same_class_picks = 2
+            assert K % same_class_picks == 0, "K must be dividable with 'same_class_picks' = " + str(same_class_picks) + " to use sct"
+            style_features = self.style_encoder(style_images[0::K//same_class_picks])
+        return outp#, style_features
     
 ######### SA-GAN #########
 class Self_Attn(nn.Module):

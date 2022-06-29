@@ -13,14 +13,14 @@ if __name__ == '__main__':
     opt.batch_size = 1    # test code only supports batch_size = 1
     opt.display_id = -1   # no visdom display; the test code saves the results to a HTML file.
 
-    if opt.stages == "0":
+    if opt.stage == "0":
         opt.name += "_offset_prediction"
         #opt.dis_2 = False
-    elif opt.stages == "1":
+    elif opt.stage == "1":
         opt.name += "_font_generation"
         opt.dis_2 = True
-    elif opt.stages == "0,1":
-        opt.stages = "0"
+    elif opt.stage == "0,1":
+        opt.stage = "0"
         #opt.dis_2 = False
         name = opt.name
         opt.name += "_offset_prediction"
@@ -28,7 +28,7 @@ if __name__ == '__main__':
         #opt.continue_train = True
         model_offset = create_model(opt)      # create a model given opt.model and other options
         model_offset.setup(opt)               # regular setup: load and print networks; create schedulers
-        opt.stages = "0,1"
+        opt.stage = "0,1"
         opt.dis_2 = True
         opt.name = name
         opt.name += "_font_generation"
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     for i, data in enumerate(dataset):
         if i >= opt.num_test:  # only apply our model to opt.num_test images.
             break
-        if opt.stages != "0,1":
+        if opt.stage != "0,1":
             model.set_input(data)         # unpack data from dataset and apply preprocessing
         else:
             model.set_input(data, model_offset)         # unpack data from dataset and apply preprocessing

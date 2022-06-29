@@ -45,7 +45,7 @@ class FontGANModel(BaseModel):
             self.visual_names = ['gt_images', 'generated_images']
             self.model_names = ['G']
         # define networks (both generator and discriminator)
-        nc = 1 if opt.stages != "0" else 3
+        nc = 1 if opt.stage != "0" else 3
         self.netG = networks.define_G(1, nc, opt.ngf, opt.netG, opt.norm,
                                       opt.dropout, opt.init_type, opt.init_gain, self.gpu_ids)
 
@@ -77,7 +77,7 @@ class FontGANModel(BaseModel):
         self.transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean = (0.5), std = (0.5))])
         self.process = 0
         self.counter = 0
-        self.stages = opt.stages
+        self.stages = opt.stage
     
     def set_input(self, data, model_offset = None):
         self.counter = (self.counter + 1) % 2

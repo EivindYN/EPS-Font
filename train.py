@@ -26,18 +26,18 @@ from util.visualizer import Visualizer
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
-    assert opt.stages != "0,1", "Set stages to either 0 or 1"
-    if opt.stages == "0":
+    assert opt.stage != "0,1", "Set stages to either 0 or 1"
+    if opt.stage == "0":
         opt.name += "_offset_prediction"
-    elif opt.stages == "1":
-        opt.stages = "0"
+    elif opt.stage == "1":
+        opt.stage = "0"
         name = opt.name
         opt.name += "_offset_prediction"
         continue_train = opt.continue_train
         opt.continue_train = True
         model_offset = create_model(opt)      # create a model given opt.model and other options
         model_offset.setup(opt)               # regular setup: load and print networks; create schedulers
-        opt.stages = "1"
+        opt.stage = "1"
         opt.dis_2 = True
         opt.name = name
         opt.name += "_font_generation"
@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
             total_iters += opt.batch_size
             epoch_iter += opt.batch_size
-            if opt.stages != "1":
+            if opt.stage != "1":
                 model.set_input(data)         # unpack data from dataset and apply preprocessing
             else:
                 model.set_input(data, model_offset)         # unpack data from dataset and apply preprocessing

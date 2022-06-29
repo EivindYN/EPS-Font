@@ -56,7 +56,7 @@ class BaseOptions():
         parser.add_argument('--suffix', default='', type=str, help='customized suffix: opt.name = opt.name + suffix: e.g., {model}_{netG}_size{load_size}')
         # Font-GAN specific parameters TODO: Consider moving to dataset or model
         parser.add_argument('--style_channel', type=int, default=6, help='# of style channels') #default=13
-        parser.add_argument('--stages', type=str, default="0,1", help="which stages to include? 0: offset prediction, 1: font generation")
+        parser.add_argument('--stage', type=str, default="0,1", help="which stages to include? 0: offset prediction, 1: font generation")
         parser.set_defaults(direction="english2chinese", dataset_mode="font",load_size=16, display_winsize=64)
         self.initialized = True
         return parser
