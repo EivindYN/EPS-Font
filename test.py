@@ -44,7 +44,7 @@ if __name__ == '__main__':
     print('creating web directory', web_dir)
     webpage = html.HTML(web_dir, 'Experiment = %s, Phase = %s, Epoch = %s' % (opt.name, opt.phase, opt.epoch))
     # test with eval mode. This only affects layers like batchnorm and dropout.
-    if opt.eval:
+    if not opt.no_eval:
         model.eval()
     for i, data in enumerate(dataset):
         if i >= opt.num_test:  # only apply our model to opt.num_test images.

@@ -47,7 +47,7 @@ class FontGANModel(BaseModel):
         # define networks (both generator and discriminator)
         nc = 1 if opt.stages != "0" else 3
         self.netG = networks.define_G(1, nc, opt.ngf, opt.netG, opt.norm,
-                                      not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
+                                      opt.dropout, opt.init_type, opt.init_gain, self.gpu_ids)
 
         if self.isTrain:  # define discriminators; conditional GANs need to take both input and output images; Therefore, #channels for D is input_nc + output_nc
             if self.dis_2:
