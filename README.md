@@ -27,6 +27,15 @@ Tested on Windows, but should work on Linux as well.
 
 NB: Defaults are batch_size = 64, gpu = 0, lambda_SC = 0.
 
+If you get an error ending with:
+``` bash
+  Pointer addresses:
+      input: 000000087C570000
+      output: 00000007854CD800
+      weight: 0000000785488000
+```
+Then decrease the batch size
+
 - To test:
 ``` bash
   python test.py
