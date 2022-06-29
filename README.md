@@ -4,7 +4,7 @@ Implementation of "Few-shot Font Style Transfer with Extraction of Partial Style
 
 Tested on Windows, but should work on Linux as well.
 
-##Setup
+## Setup
 ``` bash
   pip install -r requirements.txt
   pip install scikit-image
