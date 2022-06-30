@@ -43,3 +43,10 @@ Then decrease the batch size.
 ``` bash
   python test.py
 ```
+
+## Acknowledgement
+
+Code derived and rehashed from:
+* [pix2pix](https://github.com/yenchenlin/pix2pix-tensorflow) by Azadi et al.
+* [FTransGAN](https://github.com/ligoudaner377/font_translator_gan) by Li et al. 
+
