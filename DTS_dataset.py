@@ -15,6 +15,7 @@ IMG_EXTENSIONS = [
     '.tif', '.TIF', '.tiff', '.TIFF',
 ]
 from enum import Enum
+import util.util
 ImgMode = Enum('ImgMode', 'NORMAL OUTLINE INVERT')
 
 def is_image_file(filename):
@@ -33,7 +34,7 @@ def make_dataset(dir, max_dataset_size=float("inf")):
     return images[:min(max_dataset_size, len(images))]
 
 def make_skeleton_images():
-    for language in ["source"]:#"source", "english", "chinese"]:
+    for language in ["source"]:#"source", "english", "chinese"]:        
         optdataroot = "./datasets/font"
         optphase = "train"
         optmax_dataset_size = float("inf")
@@ -43,10 +44,11 @@ def make_skeleton_images():
             #skeleton_image = get_binary_area(load_image(img))
             #if language == "source":
             #    raise Exception("binary_area shouldn't be used")
-            if os.path.exists(img):
-                return
+            output_path = img.replace("datasets/font", "datasets/font_offset_color")
+            if os.path.exists(output_path):
+                continue
             skeleton_image = skeleton(get_binary(load_image(img)))
-            save_image(skeleton_image, img.replace("datasets/font", "datasets/font_offset_color"))
+            save_image(skeleton_image, output_path)
 
 
 def areaAllFonts():
